@@ -136,14 +136,6 @@ $P_Res = New-Object System.Windows.Forms.Panel; $P_Res.Dock="Fill"; $P_Res.Visib
 
 # --- HELPER FUNCTIONS ---
 
-function Get-ImageFromFile($filename) {
-    $path = Join-Path $PSScriptRoot $filename
-    if (Test-Path $path) {
-        return [System.Drawing.Image]::FromFile($path)
-    }
-    return $null
-}
-
 function Write-Log([string]$msg) {
     $txtLog.AppendText("[$([DateTime]::Now.ToString('HH:mm:ss'))] $msg`r`n")
     $txtLog.ScrollToCaret()
@@ -233,25 +225,57 @@ function Invoke-Activation($EditionName) {
         }
         if ($activated) {
             Start-Sleep -s 1; $P_Act.Visible=$false; $P_Res.Visible=$true
-            
-            # --- BUILD RESULT SCREEN ---
             $P_Res.Controls.Clear()
             
+            # --- DYNAMIC SUCCESS SCREEN LAYOUT ---
+            [int]$currentY = 40
+            [int]$padding = 30
+
             # 1. Edition Name (TOP)
-            $lblEd = New-Object System.Windows.Forms.Label; $lblEd.Text = $installedName; $lblEd.Font = New-Object System.Drawing.Font("Segoe UI", 24, [System.Drawing.FontStyle]::Bold); $lblEd.ForeColor = $Colors.Text; $lblEd.AutoSize = $false; $lblEd.Size = New-Object System.Drawing.Size(580, 50); $lblEd.TextAlign = "MiddleCenter"; $lblEd.Location = New-Object System.Drawing.Point(10, 30); $P_Res.Controls.Add($lblEd)
+            $lblEd = New-Object System.Windows.Forms.Label
+            $lblEd.Text = $installedName
+            $lblEd.Font = New-Object System.Drawing.Font("Segoe UI", 24, [System.Drawing.FontStyle]::Bold)
+            $lblEd.ForeColor = $Colors.Text
+            $lblEd.AutoSize = $true
+            $lblEd.MaximumSize = New-Object System.Drawing.Size(560, 0)
+            $lblEd.TextAlign = "MiddleCenter"
+            $P_Res.Controls.Add($lblEd)
+            $lblEd.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - $lblEd.Width) / 2), $currentY)
+            $currentY = $lblEd.Bottom + $padding
 
-            # 2. Banner
-            $img1 = Get-ImageFromFile "image_1.png"
-            if ($img1) { $pb1 = New-Object System.Windows.Forms.PictureBox; $pb1.Image = $img1; $pb1.SizeMode = "AutoSize"; $pb1.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - $pb1.Image.Width) / 2), 90); $P_Res.Controls.Add($pb1) } 
-            else { $lblS = New-Object System.Windows.Forms.Label; $lblS.Text="Product Successfully Activated"; $lblS.ForeColor=[System.Drawing.Color]::LimeGreen; $lblS.Font=New-Object System.Drawing.Font("Segoe UI",16,[System.Drawing.FontStyle]::Bold); $lblS.AutoSize=$false; $lblS.Size=New-Object System.Drawing.Size(580,40); $lblS.TextAlign="MiddleCenter"; $lblS.Location=New-Object System.Drawing.Point(10,90); $P_Res.Controls.Add($lblS) }
+            # 2. Banner Text
+            $lblS = New-Object System.Windows.Forms.Label
+            $lblS.Text = "Product Successfully Activated"
+            $lblS.ForeColor = [System.Drawing.Color]::LimeGreen
+            $lblS.Font = New-Object System.Drawing.Font("Segoe UI", 16, [System.Drawing.FontStyle]::Bold)
+            $lblS.AutoSize = $true
+            $lblS.TextAlign = "MiddleCenter"
+            $P_Res.Controls.Add($lblS)
+            $lblS.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - $lblS.Width) / 2), $currentY)
+            $currentY = $lblS.Bottom + $padding
 
-            # 3. Main Graphic
-            $img0 = Get-ImageFromFile "image_0.png"
-            if ($img0) { $pb0 = New-Object System.Windows.Forms.PictureBox; $pb0.Image = $img0; $pb0.SizeMode = "AutoSize"; $pb0.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - $pb0.Image.Width) / 2), 150); $P_Res.Controls.Add($pb0) } 
-            else { $lblAc = New-Object System.Windows.Forms.Label; $lblAc.Text="ACTIVATED!"; $lblAc.ForeColor=[System.Drawing.Color]::LimeGreen; $lblAc.Font=New-Object System.Drawing.Font("Segoe UI",28,[System.Drawing.FontStyle]::Bold); $lblAc.AutoSize=$false; $lblAc.Size=New-Object System.Drawing.Size(580,100); $lblAc.TextAlign="MiddleCenter"; $lblAc.Location=New-Object System.Drawing.Point(10,200); $P_Res.Controls.Add($lblAc) }
+            # 3. Main Graphic Text
+            $lblAc = New-Object System.Windows.Forms.Label
+            $lblAc.Text = "ACTIVATED!"
+            $lblAc.ForeColor = [System.Drawing.Color]::LimeGreen
+            $lblAc.Font = New-Object System.Drawing.Font("Segoe UI", 28, [System.Drawing.FontStyle]::Bold)
+            $lblAc.AutoSize = $true
+            $lblAc.TextAlign = "MiddleCenter"
+            $P_Res.Controls.Add($lblAc)
+            $lblAc.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - $lblAc.Width) / 2), $currentY)
 
-            # 4. Button
-            $btnReturn = New-NavButton "Return Home" 300 0 { $P_Res.Visible=$false; $P_Main.Visible=$true }; $btnReturn.Location = New-Object System.Drawing.Point(([int]($P_Res.Width - 300) / 2), 500); $P_Res.Controls.Add($btnReturn)
+            # 4. Buttons (Side by Side)
+            [int]$btnY = $P_Res.Height - 150
+            
+            # Return Home
+            $btnReturn = New-NavButton "Return Home" 220 $btnY { $P_Res.Visible=$false; $P_Main.Visible=$true }
+            $btnReturn.Location = New-Object System.Drawing.Point(50, $btnY)
+            $P_Res.Controls.Add($btnReturn)
+
+            # Exit
+            $btnExit = New-NavButton "Exit" 220 $btnY { $MainForm.Close() }
+            $btnExit.Location = New-Object System.Drawing.Point(310, $btnY)
+            $P_Res.Controls.Add($btnExit)
 
         } else { throw "All KMS servers failed." }
     } catch {
@@ -282,7 +306,7 @@ function Show-ServerEditions([string]$GenName, [array]$Buttons) {
     $null = $P_Srv_Edit.Controls.Add((New-NavButton "Back" 200 $yBack { $P_Srv_Edit.Visible=$false; $P_Srv_Gen.Visible=$true })); Add-Footer $P_Srv_Edit $false ($yBack + 60)
 }
 
-# --- DATA DEFINITIONS ---
+# --- DATA DEFINITIONS (MUST COME BEFORE BUTTON CREATION) ---
 $con_data = @( @{ T="Windows Home"; D="Standard Consumer"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Home and Home N" }, @{ T="Windows Pro"; D="Small Business/Power"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Pro and Pro N" }, @{ T="Windows Home SL"; D="Single Language"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Home SL and Home SL N" } )
 $ent_data = @( @{ T="Enterprise"; D="Volume Lic"; R="Rel: Various"; E="EOL: Varies"; Key="Windows Enterprise and Enterprise N and Enterprise G" }, @{ T="Education"; D="Academic Lic"; R="Rel: Various"; E="EOL: Varies"; Key="Windows Education" }, @{ T="Pro Workstation"; D="High-end HW"; R="Rel: 2017"; E="EOL: Varies"; Key="Windows Pro for Workstations" }, @{ T="Pro Education"; D="K-12 Specific"; R="Rel: 2016"; E="EOL: Varies"; Key="Windows Pro Education" }, @{ T="Enterprise LTSC"; D="Long Term"; R="Rel: 2024/21/19"; E="EOL: 5-10 Yrs"; Key="Windows Enterprise LTSC (2024&2021&2019)" }, @{ T="IoT Enterprise"; D="Embedded"; R="Rel: 2024"; E="EOL: 10 Yrs"; Key="Windows IoT LTSC 2024" } )
 $leg_data = @( @{ T="Windows 8.1"; D="Start Button"; R="Rel: 2013"; E="EOL: Jan 2023"; Key="Windows 8.1 Pro and Pro N" }, @{ T="Windows 8"; D="Metro UI"; R="Rel: 2012"; E="EOL: Jan 2016"; Key="Windows 8 Pro and Pro N" }, @{ T="Windows 7"; D="Fan Favorite"; R="Rel: 2009"; E="EOL: Jan 2020"; Key="Windows 7 Professional, Professional N, and Professional E" }, @{ T="Windows Vista"; D="Aero Glass"; R="Rel: 2007"; E="EOL: Apr 2017"; Key="Windows Vista Business and Business N" } )
@@ -318,6 +342,5 @@ $txtLog.Multiline=$true; $txtLog.ScrollBars="Vertical"; $txtLog.Location=New-Obj
 $null = $P_Act.Controls.Add($btnFailHome) # Add the fail button to the panel
 
 # --- RESULT ---
-$null = $P_Res.Controls.Add((New-NavButton "Return Home" 300 500 { $P_Res.Visible=$false; $P_Main.Visible=$true }))
-
+# Initial button logic (dynamic in function)
 $null = $MainForm.ShowDialog()
