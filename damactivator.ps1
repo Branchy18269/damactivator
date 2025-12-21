@@ -1,13 +1,4 @@
 # ==============================================================================
-# 0. HIDE CONSOLE WINDOW (Add-on)
-# ==============================================================================
-$t = '[DllImport("user32.dll")] public static extern bool ShowWindow(int handle, int state);'
-try {
-    $win = Add-Type -MemberDefinition $t -Name "Win32" -Namespace Win32 -PassThru
-    $win::ShowWindow(([System.Diagnostics.Process]::GetCurrentProcess() | Get-Process).MainWindowHandle, 0)
-} catch {}
-
-# ==============================================================================
 # 1. ADMIN PRIVILEGE CHECK
 # ==============================================================================
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -18,8 +9,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
     $msg = "DamActivator requires Administrator privileges.`n`nRestart as Administrator?"
     $choice = [System.Windows.Forms.MessageBox]::Show($msg, "Admin Required", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Warning)
     if ($choice -eq 'Yes') {
-        # Added -WindowStyle Hidden to the restart command
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`"" -Verb RunAs
+        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
         exit
     }
     exit
@@ -29,7 +19,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ==============================================================================
-# 2. KEY DATABASE
+# 2. KEY DATABASE (COMPLETE)
 # ==============================================================================
 $Keys = @{
     # --- CONSUMER ---
@@ -131,7 +121,7 @@ $MainForm.BackColor = $Colors.Bg
 # Define UI Components EARLY
 $txtLog = New-Object System.Windows.Forms.TextBox
 $lblA = New-Object System.Windows.Forms.Label
-# The button below will be initialized after $P_Act creation
+# Fail button defined later
 
 # Panels
 $P_Main = New-Object System.Windows.Forms.Panel; $P_Main.Dock="Fill"; $null = $MainForm.Controls.Add($P_Main)
@@ -292,7 +282,7 @@ function Show-ServerEditions([string]$GenName, [array]$Buttons) {
     $null = $P_Srv_Edit.Controls.Add((New-NavButton "Back" 200 $yBack { $P_Srv_Edit.Visible=$false; $P_Srv_Gen.Visible=$true })); Add-Footer $P_Srv_Edit $false ($yBack + 60)
 }
 
-# --- DATA DEFINITIONS (MUST COME BEFORE BUTTON CREATION) ---
+# --- DATA DEFINITIONS ---
 $con_data = @( @{ T="Windows Home"; D="Standard Consumer"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Home and Home N" }, @{ T="Windows Pro"; D="Small Business/Power"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Pro and Pro N" }, @{ T="Windows Home SL"; D="Single Language"; R="Rel: 2015"; E="EOL: Oct 2025"; Key="Windows Home SL and Home SL N" } )
 $ent_data = @( @{ T="Enterprise"; D="Volume Lic"; R="Rel: Various"; E="EOL: Varies"; Key="Windows Enterprise and Enterprise N and Enterprise G" }, @{ T="Education"; D="Academic Lic"; R="Rel: Various"; E="EOL: Varies"; Key="Windows Education" }, @{ T="Pro Workstation"; D="High-end HW"; R="Rel: 2017"; E="EOL: Varies"; Key="Windows Pro for Workstations" }, @{ T="Pro Education"; D="K-12 Specific"; R="Rel: 2016"; E="EOL: Varies"; Key="Windows Pro Education" }, @{ T="Enterprise LTSC"; D="Long Term"; R="Rel: 2024/21/19"; E="EOL: 5-10 Yrs"; Key="Windows Enterprise LTSC (2024&2021&2019)" }, @{ T="IoT Enterprise"; D="Embedded"; R="Rel: 2024"; E="EOL: 10 Yrs"; Key="Windows IoT LTSC 2024" } )
 $leg_data = @( @{ T="Windows 8.1"; D="Start Button"; R="Rel: 2013"; E="EOL: Jan 2023"; Key="Windows 8.1 Pro and Pro N" }, @{ T="Windows 8"; D="Metro UI"; R="Rel: 2012"; E="EOL: Jan 2016"; Key="Windows 8 Pro and Pro N" }, @{ T="Windows 7"; D="Fan Favorite"; R="Rel: 2009"; E="EOL: Jan 2020"; Key="Windows 7 Professional, Professional N, and Professional E" }, @{ T="Windows Vista"; D="Aero Glass"; R="Rel: 2007"; E="EOL: Apr 2017"; Key="Windows Vista Business and Business N" } )
